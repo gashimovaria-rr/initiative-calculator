@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор размерности инициатив</title>
+    <style>
+        *{box-sizing:border-box}
+        body{font-family:Arial,sans-serif;background:#f0f0f0;margin:20px}
+        .calculator{max-width:1200px;margin:0 auto;background:white;padding:25px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.2)}
+        h1{text-align:center;color:#333;margin-bottom:20px}
+        .initiative-header{background:linear-gradient(135deg,#667eea,#764ba2);padding:20px;border-radius:10px;margin-bottom:25px;color:white}
+        .initiative-header input{width:100%;padding:12px;border-radius:8px;border:none;font-size:16px}
+        .user-panel{background:#f8f9fa;padding:20px;border-radius:10px;margin-bottom:25px;border:2px solid #e9ecef}
+        .user-form{display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end}
+        .form-group{flex:1;min-width:200px}
+        .form-group label{display:block;margin-bottom:5px;font-weight:bold}
+        .form-group input,.form-group select{width:100%;padding:10px;border:2px solid #dee2e6;border-radius:8px}
+        .add-user-btn{background:#28a745;color:white;padding:10px 25px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;height:42px}
+        .participants-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;margin:20px 0}
+        .participant-card{background:white;border-radius:10px;padding:15px;box-shadow:0 2px 10px rgba(0,0,0,0.1);border-left:4px solid #6c757d}
+        .participant-card[data-role="developer"]{border-left-color:#007bff}
+        .participant-card[data-role="analyst"]{border-left-color:#28a745}
+        .participant-card[data-role="tester"]{border-left-color:#ffc107}
+        .participant-card[data-role="expert"]{border-left-color:#dc3545}
+        .participant-header{display:flex;justify-content:space-between;margin-bottom:10px}
+        .participant-name{font-weight:bold}
+        .participant-score{font-size:28px;font-weight:bold;color:#007bff;text-align:center;margin:10px 0}
+        .participant-size{text-align:center;color:#6c757d;margin-bottom:15px}
+        .participant-actions{display:flex;gap:5px}
+        .edit-btn,.delete-btn{flex:1;padding:8px;border:none;border-radius:5px;cursor:pointer}
+        .edit-btn{background:#ffc107;color:#856404}
+        .delete-btn{background:#dc3545;color:white}
+        .category{background:#e9ecef;padding:12px 20px;margin:25px 0 15px;border-radius:8px;font-weight:bold;font-size:1.3em}
+        .criterion{display:flex;align-items:flex-start;padding:15px;margin:8px 0;background:#f8f9fa;border-radius:8px;border-left:4px solid #6c757d;gap:10px}
+        .criterion input{width:20px;height:20px;margin-top:2px;flex-shrink:0}
+        .criterion label{flex:1;font-size:15px;line-height:1.5}
+        .weight-badge{background:#007bff;color:white;padding:5px 12px;border-radius:20px;font-size:13px;white-space:nowrap}
+        .consolidated-panel{margin-top:30px;padding:20px;background:linear-gradient(135deg,#f5f7fa,#c3cfe2);border-radius:10px}
+        .role-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0}
+        .role-stat-card{background:white;padding:15px;border-radius:10px;text-align:center}
+        .role-stat-card.developer{border-top:4px solid #007bff}
+        .role-stat-card.analyst{border-top:4px solid #28a745}
+        .role-stat-card.tester{border-top:4px solid #ffc107}
+        .role-stat-card.expert{border-top:4px solid #dc3545}
+        .role-average{font-size:28px;font-weight:bold;color:#007bff}
+        .final-result{background:white;padding:25px;border-radius:10px;text-align:center;margin-top:20px;border:3px solid #28a745}
+        .final-score{font-size:3.5em;font-weight:bold;color:#28a745}
+        .final-size{font-size:3em;font-weight:bold;color:#28a745;margin-top:10px}
+        .buttons{display:flex;gap:10px;margin:20px 0}
+        button{flex:1;padding:14px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
+        .save-btn{background:#007bff;color:white}
+        .export-btn{background:#17a2b8;color:white}
+        .reset-btn{background:#6c757d;color:white}
+        .legend{margin-top:25px;padding:20px;background:#f8f9fa;border-radius:10px}
+        .size-table{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:15px}
+        .size-item{padding:12px;border-radius:8px;background:white;text-align:center}
+        .size-xs{background:#d4edda}
+        .size-s{background:#cce5ff}
+        .size-m{background:#fff3cd}
+        .size-l{background:#f8d7da}
+        .size-xl{background:#e0d4e8}
+        .footer{text-align:center;margin-top:20px;color:#6c757d;font-size:13px}
+        .role-note{background:#fff3cd;border-left:4px solid #ffc107;padding:10px 15px;margin-bottom:20px;border-radius:8px}
+    </style>
+</head>
+<body>
+<div class="calculator">
+    <h1>👥 Командная оценка размерности инициатив</h1>
+    <div class="initiative-header">
+        <label>📋 Название / номер инициативы:</label>
+        <input type="text" id="initiativeName" placeholder="Например: ЦР-5460">
+    </div>
+    <div class="user-panel">
+        <h3>➕ Добавить участника оценки</h3>
+        <div class="user-form">
+            <div class="form-group"><label>Имя</label><input type="text" id="userName" placeholder="Иван Петров"></div>
+            <div class="form-group"><label>Роль</label>
+                <select id="userRole">
+                    <option value="developer">💻 Разработчик</option>
+                    <option value="analyst">📊 Аналитик</option>
+                    <option value="tester">🧪 Тестировщик</option>
+                    <option value="expert">👔 Методолог/Эксперт</option>
+                </select>
+            </div>
+            <button class="add-user-btn" onclick="addParticipant()">Добавить</button>
+        </div>
+    </div>
+    <div id="participantsList" class="participants-grid"></div>
+    <div id="criteria-container"></div>
+    <div class="consolidated-panel">
+        <h3>📊 Статистика по ролям</h3>
+        <div class="role-stats" id="roleStats"></div>
+        <div class="final-result">
+            <div>ИТОГОВЫЙ РЕЗУЛЬТАТ (среднее по всем):</div>
+            <div class="final-score" id="finalScore">0.00</div>
+            <div class="final-size" id="finalSize">-</div>
+            <div id="participantsCount">Участников: 0</div>
+        </div>
+    </div>
+    <div class="buttons">
+        <button class="save-btn" onclick="saveAll()">💾 Сохранить</button>
+        <button class="export-btn" onclick="exportExcel()">📥 Экспорт в CSV</button>
+        <button class="reset-btn" onclick="resetAll()">🔄 Сбросить</button>
+    </div>
+    <div class="legend">
+        <h3>📐 Шкала размеров:</h3>
+        <div class="size-table">
+            <div class="size-item size-xs"><strong>XS</strong><br>&lt;5</div>
+            <div class="size-item size-s"><strong>S</strong><br>5-11</div>
+            <div class="size-item size-m"><strong>M</strong><br>12-20</div>
+            <div class="size-item size-l"><strong>L</strong><br>21-27</div>
+            <div class="size-item size-xl"><strong>XL</strong><br>≥28</div>
+        </div>
+    </div>
+    <div class="footer">✓ Добавьте участников, выберите участника для редактирования, отметьте критерии</div>
+</div>
+
+<script>
+const criteriaData = {
+    "Модули и подсистемы": [
+        "Требуются доработки в 1 системе, только в УТ с еженедельными релизами:2.22",
+        "Требуются доработки в 2-х и более системах:2.60",
+        "Требуются доработки в 2-х и более системах, одна из которых - ЦФС:2.89",
+        "Затрагиваемая система имеет сильную связность с другими системами и/или legacy-монолит:2.92",
+        "Требуется доработка функционала в зоне другого стрима:2.71",
+        "Требуются доработки в 1 системе, только в ЦФС:2.50"
+    ],
+    "Интеграция и API": [
+        "Требуется создание нового потока интеграции:2.61",
+        "Требуется доработка потока интеграции:2.25",
+        "По существующим обменам нет всей документации:2.57",
+        "Интеграция выполняется силами стрима Интеграции:2.53"
+    ],
+    "Безопасность и права доступа": [
+        "Необходимы изменения в ролевой модели или правах пользователей:1.62",
+        "Есть требования по безопасности данных:2.54"
+    ],
+    "Аналитика и требования": [
+        "Требуется встроить новую логику в существующую:2.45",
+        "Требуется проведение реверса существующей подсистемы:2.09",
+        "Требования неполные, требуют большей глубины проработки:2.67",
+        "Есть ряд предположений (гипотезы), требующих проверки:2.00",
+        "Грейд основного аналитика (джуниор — сильное, мидл — среднее, сеньор — слабое):2.25"
+    ],
+    "Тестирование и окружение": [
+        "Тестовое окружение не доступно или долго разворачивается:2.63",
+        "Требуется заведение большого объема тестовых данных:1.72",
+        "Требуется проведение регрессионного тестирования смежных систем:2.54",
+        "Требуется сложный и длительный UAT с привлечением пользователей:2.71",
+        "Длительность этапа тестирования из-за долгого выполнения:2.36",
+        "Потребность в автоматизации тестирования:2.30"
+    ],
+    "Внешние зависимости и коммуникации": [
+        "Необходимо взаимодействие с внешним владельцем модуля/системы:2.86"
+    ],
+    "Риски и эксплуатация": [
+        "Риск появления CRs:2.45",
+        "Потребность в мониторинге:1.88"
+    ],
+    "Данные и НСИ": [
+        "Большой объем используемых данных (приводит к кратному увеличению задачи):2.05"
+    ]
+};
+
+const categoriesHiddenForTester = ["Аналитика и требования", "Риски и эксплуатация"];
+
+let participants = [];
+let currentEditId = null;
+let currentRoleView = null;
+
+function getCriteriaArray() {
+    const result = [];
+    for (const cat in criteriaData) {
+        for (const item of criteriaData[cat]) {
+            const [text, weight] = item.split(':');
+            result.push({ category: cat, text, weight: parseFloat(weight) });
+        }
+    }
+    return result;
+}
+
+function renderCriteria() {
+    const container = document.getElementById('criteria-container');
+    container.innerHTML = '';
+    if (currentRoleView === 'tester') {
+        const note = document.createElement('div');
+        note.className = 'role-note';
+        note.innerHTML = '⚠️ Тестировщики не видят "Аналитика и требования" и "Риски и эксплуатация"';
+        container.appendChild(note);
+    }
+    for (const cat in criteriaData) {
+        if (currentRoleView === 'tester' && categoriesHiddenForTester.includes(cat)) continue;
+        const catDiv = document.createElement('div');
+        catDiv.className = 'category';
+        catDiv.textContent = cat;
+        container.appendChild(catDiv);
+        for (const item of criteriaData[cat]) {
+            const [text, weight] = item.split(':');
+            const div = document.createElement('div');
+            div.className = 'criterion';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.setAttribute('data-weight', weight);
+            cb.addEventListener('change', updateCurrentScore);
+            const label = document.createElement('label');
+            label.textContent = text;
+            const badge = document.createElement('span');
+            badge.className = 'weight-badge';
+            badge.textContent = `вес ${weight}`;
+            div.appendChild(cb);
+            div.appendChild(label);
+            div.appendChild(badge);
+            container.appendChild(div);
+        }
+    }
+}
+
+function addParticipant() {
+    const name = document.getElementById('userName').value.trim();
+    const role = document.getElementById('userRole').value;
+    if (!name) { alert('Введите имя'); return; }
+    participants.push({ id: Date.now(), name, role, checked: [], score: 0, size: '-' });
+    document.getElementById('userName').value = '';
+    renderParticipants();
+    updateStats();
+    editParticipant(participants[participants.length-1].id);
+}
+
+function editParticipant(id) {
+    currentEditId = id;
+    const p = participants.find(p => p.id === id);
+    if (!p) return;
+    currentRoleView = p.role;
+    renderCriteria();
+    const allCb = document.querySelectorAll('input[type="checkbox"]');
+    p.checked.forEach(idx => { if(allCb[idx]) allCb[idx].checked = true; });
+    document.querySelectorAll('.participant-card').forEach(c => c.style.opacity = '0.7');
+    const active = document.querySelector(`.participant-card[data-id="${id}"]`);
+    if(active) active.style.opacity = '1';
+    updateCurrentScore();
+}
+
+function deleteParticipant(id) {
+    if(!confirm('Удалить?')) return;
+    participants = participants.filter(p => p.id !== id);
+    if(currentEditId === id) { currentEditId = null; currentRoleView = null; renderCriteria(); }
+    renderParticipants();
+    updateStats();
+}
+
+function renderParticipants() {
+    const container = document.getElementById('participantsList');
+    container.innerHTML = '';
+    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
+    const roleIcons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔' };
+    participants.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'participant-card';
+        card.setAttribute('data-role', p.role);
+        card.setAttribute('data-id', p.id);
+        card.innerHTML = `
+            <div class="participant-header"><span class="participant-name">${p.name}</span><span>${roleIcons[p.role]} ${roleNames[p.role]}</span></div>
+            <div class="participant-score">${p.score.toFixed(2)}</div>
+            <div class="participant-size">${p.size}</div>
+            <div class="participant-actions"><button class="edit-btn" onclick="editParticipant(${p.id})">✏️</button><button class="delete-btn" onclick="deleteParticipant(${p.id})">🗑️</button></div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function updateCurrentScore() {
+    if(!currentEditId) return;
+    const idx = participants.findIndex(p => p.id === currentEditId);
+    if(idx === -1) return;
+    const cb = document.querySelectorAll('input[type="checkbox"]');
+    const checked = [];
+    let total = 0;
+    cb.forEach((c,i) => { if(c.checked){ checked.push(i); total += parseFloat(c.getAttribute('data-weight')); } });
+    total = Math.round(total*100)/100;
+    let size = total<5?'XS':total<12?'S':total<21?'M':total<28?'L':'XL';
+    participants[idx].checked = checked;
+    participants[idx].score = total;
+    participants[idx].size = size;
+    renderParticipants();
+    updateStats();
+}
+
+function updateStats() {
+    const statsDiv = document.getElementById('roleStats');
+    statsDiv.innerHTML = '';
+    const roles = ['developer','analyst','tester','expert'];
+    const roleNames = { developer:'Разработчики', analyst:'Аналитики', tester:'Тестировщики', expert:'Методологи' };
+    const icons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔' };
+    let totalSum=0, totalCount=0;
+    roles.forEach(role => {
+        const rp = participants.filter(p => p.role === role);
+        const cnt = rp.length;
+        if(cnt){
+            const sum = rp.reduce((a,b)=>a+b.score,0);
+            const avg = Math.round(sum/cnt*100)/100;
+            totalSum += sum;
+            totalCount += cnt;
+            statsDiv.innerHTML += `<div class="role-stat-card ${role}"><div>${icons[role]}</div><div>${roleNames[role]}</div><div>👥 ${cnt}</div><div class="role-average">${avg.toFixed(2)}</div></div>`;
+        } else {
+            statsDiv.innerHTML += `<div class="role-stat-card ${role}"><div>${icons[role]}</div><div>${roleNames[role]}</div><div>👥 0</div><div class="role-average">—</div></div>`;
+        }
+    });
+    const overall = totalCount ? Math.round(totalSum/totalCount*100)/100 : 0;
+    document.getElementById('finalScore').innerText = overall.toFixed(2);
+    let size = overall<5?'XS':overall<12?'S':overall<21?'M':overall<28?'L':'XL';
+    document.getElementById('finalSize').innerText = size;
+    document.getElementById('participantsCount').innerText = `Участников: ${totalCount}`;
+}
+
+function saveAll() {
+    const name = document.getElementById('initiativeName').value || 'Без названия';
+    localStorage.setItem('assessment', JSON.stringify({ name, participants }));
+    alert('Сохранено');
+}
+
+function exportExcel() {
+    const name = document.getElementById('initiativeName').value || 'Без названия';
+    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
+    let csv = `Инициатива;Участник;Роль;Оценка;Размер\n`;
+    participants.forEach(p => { csv += `"${name}";"${p.name}";"${roleNames[p.role]}";${p.score.toFixed(2)};"${p.size}"\n`; });
+    const avg = participants.length ? participants.reduce((a,b)=>a+b.score,0)/participants.length : 0;
+    csv += `"${name}";"СРЕДНЕЕ";;${Math.round(avg*100)/100};\n`;
+    const blob = new Blob(["\uFEFF"+csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name.replace(/[^a-z0-9]/gi,'_')}_оценка.csv`;
+    a.click();
+    alert('Экспорт завершен');
+}
+
+function resetAll() {
+    if(confirm('Сбросить всё?')){
+        participants = [];
+        currentEditId = null;
+        currentRoleView = null;
+        document.getElementById('initiativeName').value = '';
+        renderCriteria();
+        renderParticipants();
+        updateStats();
+        localStorage.removeItem('assessment');
+    }
+}
+
+window.onload = () => {
+    renderCriteria();
+    const saved = localStorage.getItem('assessment');
+    if(saved){
+        try{
+            const data = JSON.parse(saved);
+            document.getElementById('initiativeName').value = data.name || '';
+            participants = data.participants || [];
+            renderParticipants();
+            updateStats();
+        }catch(e){}
+    }
+};
+</script>
+</body>
+</html>
