@@ -543,4 +543,77 @@ function loadStateFromObject(state) {
 function encodeStateToUrl() {
     const state = getCurrentStateForUrl();
     const jsonStr = JSON.stringify(state);
-    let base64 = bto
+    let base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+    base64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const url = new URL(window.location.href);
+    url.searchParams.set('data', base64);
+    return url.toString();
+}
+
+function decodeStateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('data');
+    if (!encoded) return null;
+    try {
+        let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) base64 += '=';
+        const jsonStr = decodeURIComponent(escape(atob(base64)));
+        const state = JSON.parse(jsonStr);
+        return state;
+    } catch (e) {
+        console.warn("Ошибка декодирования ссылки", e);
+        return null;
+    }
+}
+
+function shareStateToUrl() {
+    const link = encodeStateToUrl();
+    navigator.clipboard.writeText(link).then(() => {
+        alert("✅ Ссылка скопирована!\n\nПерешлите её участникам. Они откроют калькулятор с теми же названием и участниками.");
+    }).catch(() => {
+        prompt("Скопируйте ссылку вручную:", link);
+    });
+}
+
+function initFromUrl() {
+    const state = decodeStateFromUrl();
+    if (state) {
+        loadStateFromObject(state);
+        return true;
+    }
+    return false;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+window.onload = () => {
+    const loadedFromUrl = initFromUrl();
+    
+    if (!loadedFromUrl) {
+        const saved = localStorage.getItem('assessment');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                document.getElementById('initiativeName').value = data.name || '';
+                participants = data.participants || [];
+                renderParticipants();
+                updateStats();
+            } catch(e) {}
+        }
+    }
+    
+    if (participants.length === 0) {
+        renderCriteria();
+    }
+};
+</script>
+</body>
+</html>
