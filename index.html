@@ -102,7 +102,6 @@
         <button class="save-btn" onclick="saveAll()">💾 Сохранить</button>
         <button class="export-btn" onclick="exportExcel()">📥 Экспорт в CSV</button>
         <button class="reset-btn" onclick="resetAll()">🔄 Сбросить</button>
-        <button class="save-btn" onclick="shareStateToUrl()" style="background:#28a745;">🔗 Поделиться ссылкой</button>
     </div>
     <div class="legend">
         <h3>📐 Шкала размеров:</h3>
@@ -348,161 +347,17 @@ function resetAll() {
     }
 }
 
-// ========== ФУНКЦИИ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ==========
-// (добавлено без изменения существующей логики)
-
-function getCurrentStateForUrl() {
-    const initiativeName = document.getElementById('initiativeName').value;
-    // Сохраняем участников: имя, роль, галочки (индексы выбранных критериев)
-    const participantsData = participants.map(p => ({
-        name: p.name,
-        role: p.role,
-        checked: p.checked.slice() // копия массива индексов
-    }));
-    return {
-        initiativeName: initiativeName,
-        participants: participantsData,
-        version: 1
-    };
-}
-
-function loadStateFromObject(state) {
-    if (!state) return false;
-    
-    // Загружаем название инициативы
-    if (state.initiativeName !== undefined) {
-        document.getElementById('initiativeName').value = state.initiativeName;
-    }
-    
-    // Загружаем участников
-    if (state.participants && Array.isArray(state.participants)) {
-        participants = [];
-        for (const pData of state.participants) {
-            // Создаем участника с правильной структурой
-            const newParticipant = {
-                id: Date.now() + Math.random() * 1000, // уникальный id
-                name: pData.name,
-                role: pData.role,
-                checked: pData.checked || [],
-                score: 0,
-                size: '-'
-            };
-            participants.push(newParticipant);
-        }
-        
-        // Пересчитываем оценки для всех участников (восстанавливаем score и size)
-        recalculateAllScores();
-        
-        // Обновляем отображение
-        renderParticipants();
-        updateStats();
-        
-        // Если есть участники, открываем первого для редактирования
-        if (participants.length > 0) {
-            editParticipant(participants[0].id);
-        } else {
-            currentEditId = null;
-            currentRoleView = null;
-            renderCriteria();
-        }
-    }
-    
-    return true;
-}
-
-function recalculateAllScores() {
-    // Получаем все критерии в правильном порядке
-    const allCriteria = [];
-    for (const cat in criteriaData) {
-        for (const item of criteriaData[cat]) {
-            const [text, weight] = item.split(':');
-            allCriteria.push({ category: cat, text, weight: parseFloat(weight) });
-        }
-    }
-    
-    for (const p of participants) {
-        let total = 0;
-        for (const idx of p.checked) {
-            if (idx < allCriteria.length) {
-                total += allCriteria[idx].weight;
-            }
-        }
-        total = Math.round(total * 100) / 100;
-        let size = total < 5 ? 'XS' : total < 12 ? 'S' : total < 21 ? 'M' : total < 28 ? 'L' : 'XL';
-        p.score = total;
-        p.size = size;
-    }
-}
-
-function encodeStateToUrl() {
-    const state = getCurrentStateForUrl();
-    const jsonStr = JSON.stringify(state);
-    // Используем base64url для безопасной передачи
-    let base64 = btoa(unescape(encodeURIComponent(jsonStr)));
-    base64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    const url = new URL(window.location.href);
-    url.searchParams.set('data', base64);
-    return url.toString();
-}
-
-function decodeStateFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    const encoded = params.get('data');
-    if (!encoded) return null;
-    try {
-        let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-        while (base64.length % 4) base64 += '=';
-        const jsonStr = decodeURIComponent(escape(atob(base64)));
-        const state = JSON.parse(jsonStr);
-        return state;
-    } catch (e) {
-        console.warn("Ошибка декодирования ссылки", e);
-        return null;
-    }
-}
-
-function shareStateToUrl() {
-    const link = encodeStateToUrl();
-    navigator.clipboard.writeText(link).then(() => {
-        alert("✅ Ссылка скопирована!\n\nПерешлите её участникам. Они откроют калькулятор с теми же названием и участниками.");
-    }).catch(() => {
-        prompt("Скопируйте ссылку вручную:", link);
-    });
-}
-
-// Загрузка состояния из URL при загрузке страницы (с приоритетом над localStorage)
-function initFromUrl() {
-    const state = decodeStateFromUrl();
-    if (state) {
-        loadStateFromObject(state);
-        return true;
-    }
-    return false;
-}
-
-// Переопределяем window.onload, чтобы сохранить существующую логику, но добавить загрузку из URL
-const originalOnload = window.onload;
 window.onload = () => {
-    // Сначала пытаемся загрузить из URL
-    const loadedFromUrl = initFromUrl();
-    
-    // Если не загрузилось из URL, загружаем из localStorage (как было)
-    if (!loadedFromUrl) {
-        const saved = localStorage.getItem('assessment');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                document.getElementById('initiativeName').value = data.name || '';
-                participants = data.participants || [];
-                renderParticipants();
-                updateStats();
-            } catch (e) {}
-        }
-    }
-    
-    // Если всё ещё нет участников, рендерим пустые критерии
-    if (participants.length === 0) {
-        renderCriteria();
+    renderCriteria();
+    const saved = localStorage.getItem('assessment');
+    if(saved){
+        try{
+            const data = JSON.parse(saved);
+            document.getElementById('initiativeName').value = data.name || '';
+            participants = data.participants || [];
+            renderParticipants();
+            updateStats();
+        }catch(e){}
     }
 };
 </script>
