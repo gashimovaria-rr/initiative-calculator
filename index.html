@@ -52,6 +52,7 @@
         .save-btn{background:#007bff;color:white}
         .export-btn{background:#17a2b8;color:white}
         .reset-btn{background:#6c757d;color:white}
+        .share-btn{background:#28a745;color:white}
         .legend{margin-top:25px;padding:20px;background:#f8f9fa;border-radius:10px}
         .size-table{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:15px}
         .size-item{padding:12px;border-radius:8px;background:white;text-align:center}
@@ -102,6 +103,7 @@
         <button class="save-btn" onclick="saveAll()">💾 Сохранить</button>
         <button class="export-btn" onclick="exportExcel()">📥 Экспорт в CSV</button>
         <button class="reset-btn" onclick="resetAll()">🔄 Сбросить</button>
+        <button class="share-btn" onclick="shareStateToUrl()">🔗 Поделиться ссылкой</button>
     </div>
     <div class="legend">
         <h3>📐 Шкала размеров:</h3>
@@ -347,17 +349,144 @@ function resetAll() {
     }
 }
 
+// ========== ФУНКЦИИ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ==========
+
+function getCurrentStateForUrl() {
+    const initiativeName = document.getElementById('initiativeName').value;
+    const participantsData = participants.map(p => ({
+        name: p.name,
+        role: p.role,
+        checked: p.checked.slice()
+    }));
+    return {
+        initiativeName: initiativeName,
+        participants: participantsData,
+        version: 1
+    };
+}
+
+function loadStateFromObject(state) {
+    if (!state) return false;
+    
+    if (state.initiativeName !== undefined) {
+        document.getElementById('initiativeName').value = state.initiativeName;
+    }
+    
+    if (state.participants && Array.isArray(state.participants)) {
+        participants = [];
+        for (const pData of state.participants) {
+            const newParticipant = {
+                id: Date.now() + Math.random() * 1000,
+                name: pData.name,
+                role: pData.role,
+                checked: pData.checked || [],
+                score: 0,
+                size: '-'
+            };
+            participants.push(newParticipant);
+        }
+        
+        recalculateAllScores();
+        renderParticipants();
+        updateStats();
+        
+        if (participants.length > 0) {
+            editParticipant(participants[0].id);
+        } else {
+            currentEditId = null;
+            currentRoleView = null;
+            renderCriteria();
+        }
+    }
+    return true;
+}
+
+function recalculateAllScores() {
+    const allCriteria = [];
+    for (const cat in criteriaData) {
+        for (const item of criteriaData[cat]) {
+            const [text, weight] = item.split(':');
+            allCriteria.push({ category: cat, text, weight: parseFloat(weight) });
+        }
+    }
+    
+    for (const p of participants) {
+        let total = 0;
+        for (const idx of p.checked) {
+            if (idx < allCriteria.length) {
+                total += allCriteria[idx].weight;
+            }
+        }
+        total = Math.round(total * 100) / 100;
+        let size = total < 5 ? 'XS' : total < 12 ? 'S' : total < 21 ? 'M' : total < 28 ? 'L' : 'XL';
+        p.score = total;
+        p.size = size;
+    }
+}
+
+function encodeStateToUrl() {
+    const state = getCurrentStateForUrl();
+    const jsonStr = JSON.stringify(state);
+    let base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+    base64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const url = new URL(window.location.href);
+    url.searchParams.set('data', base64);
+    return url.toString();
+}
+
+function decodeStateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('data');
+    if (!encoded) return null;
+    try {
+        let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) base64 += '=';
+        const jsonStr = decodeURIComponent(escape(atob(base64)));
+        const state = JSON.parse(jsonStr);
+        return state;
+    } catch (e) {
+        console.warn("Ошибка декодирования ссылки", e);
+        return null;
+    }
+}
+
+function shareStateToUrl() {
+    const link = encodeStateToUrl();
+    navigator.clipboard.writeText(link).then(() => {
+        alert("✅ Ссылка скопирована!\n\nПерешлите её участникам. Они откроют калькулятор с теми же названием и участниками.");
+    }).catch(() => {
+        prompt("Скопируйте ссылку вручную:", link);
+    });
+}
+
+function initFromUrl() {
+    const state = decodeStateFromUrl();
+    if (state) {
+        loadStateFromObject(state);
+        return true;
+    }
+    return false;
+}
+
+const originalOnload = window.onload;
 window.onload = () => {
-    renderCriteria();
-    const saved = localStorage.getItem('assessment');
-    if(saved){
-        try{
-            const data = JSON.parse(saved);
-            document.getElementById('initiativeName').value = data.name || '';
-            participants = data.participants || [];
-            renderParticipants();
-            updateStats();
-        }catch(e){}
+    const loadedFromUrl = initFromUrl();
+    
+    if (!loadedFromUrl) {
+        const saved = localStorage.getItem('assessment');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                document.getElementById('initiativeName').value = data.name || '';
+                participants = data.participants || [];
+                renderParticipants();
+                updateStats();
+            } catch (e) {}
+        }
+    }
+    
+    if (participants.length === 0) {
+        renderCriteria();
     }
 };
 </script>
