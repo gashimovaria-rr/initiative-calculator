@@ -2,364 +2,612 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор размерности инициатив</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Командная оценка размерности инициатив</title>
     <style>
-        *{box-sizing:border-box}
-        body{font-family:Arial,sans-serif;background:#f0f0f0;margin:20px}
-        .calculator{max-width:1200px;margin:0 auto;background:white;padding:25px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.2)}
-        h1{text-align:center;color:#333;margin-bottom:20px}
-        .initiative-header{background:linear-gradient(135deg,#667eea,#764ba2);padding:20px;border-radius:10px;margin-bottom:25px;color:white}
-        .initiative-header input{width:100%;padding:12px;border-radius:8px;border:none;font-size:16px}
-        .user-panel{background:#f8f9fa;padding:20px;border-radius:10px;margin-bottom:25px;border:2px solid #e9ecef}
-        .user-form{display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end}
-        .form-group{flex:1;min-width:200px}
-        .form-group label{display:block;margin-bottom:5px;font-weight:bold}
-        .form-group input,.form-group select{width:100%;padding:10px;border:2px solid #dee2e6;border-radius:8px}
-        .add-user-btn{background:#28a745;color:white;padding:10px 25px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;height:42px}
-        .participants-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;margin:20px 0}
-        .participant-card{background:white;border-radius:10px;padding:15px;box-shadow:0 2px 10px rgba(0,0,0,0.1);border-left:4px solid #6c757d}
-        .participant-card[data-role="developer"]{border-left-color:#007bff}
-        .participant-card[data-role="analyst"]{border-left-color:#28a745}
-        .participant-card[data-role="tester"]{border-left-color:#ffc107}
-        .participant-card[data-role="expert"]{border-left-color:#dc3545}
-        .participant-header{display:flex;justify-content:space-between;margin-bottom:10px}
-        .participant-name{font-weight:bold}
-        .participant-score{font-size:28px;font-weight:bold;color:#007bff;text-align:center;margin:10px 0}
-        .participant-size{text-align:center;color:#6c757d;margin-bottom:15px}
-        .participant-actions{display:flex;gap:5px}
-        .edit-btn,.delete-btn{flex:1;padding:8px;border:none;border-radius:5px;cursor:pointer}
-        .edit-btn{background:#ffc107;color:#856404}
-        .delete-btn{background:#dc3545;color:white}
-        .category{background:#e9ecef;padding:12px 20px;margin:25px 0 15px;border-radius:8px;font-weight:bold;font-size:1.3em}
-        .criterion{display:flex;align-items:flex-start;padding:15px;margin:8px 0;background:#f8f9fa;border-radius:8px;border-left:4px solid #6c757d;gap:10px}
-        .criterion input{width:20px;height:20px;margin-top:2px;flex-shrink:0}
-        .criterion label{flex:1;font-size:15px;line-height:1.5}
-        .weight-badge{background:#007bff;color:white;padding:5px 12px;border-radius:20px;font-size:13px;white-space:nowrap}
-        .consolidated-panel{margin-top:30px;padding:20px;background:linear-gradient(135deg,#f5f7fa,#c3cfe2);border-radius:10px}
-        .role-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0}
-        .role-stat-card{background:white;padding:15px;border-radius:10px;text-align:center}
-        .role-stat-card.developer{border-top:4px solid #007bff}
-        .role-stat-card.analyst{border-top:4px solid #28a745}
-        .role-stat-card.tester{border-top:4px solid #ffc107}
-        .role-stat-card.expert{border-top:4px solid #dc3545}
-        .role-average{font-size:28px;font-weight:bold;color:#007bff}
-        .final-result{background:white;padding:25px;border-radius:10px;text-align:center;margin-top:20px;border:3px solid #28a745}
-        .final-score{font-size:3.5em;font-weight:bold;color:#28a745}
-        .final-size{font-size:3em;font-weight:bold;color:#28a745;margin-top:10px}
-        .buttons{display:flex;gap:10px;margin:20px 0}
-        button{flex:1;padding:14px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
-        .save-btn{background:#007bff;color:white}
-        .export-btn{background:#17a2b8;color:white}
-        .reset-btn{background:#6c757d;color:white}
-        .legend{margin-top:25px;padding:20px;background:#f8f9fa;border-radius:10px}
-        .size-table{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:15px}
-        .size-item{padding:12px;border-radius:8px;background:white;text-align:center}
-        .size-xs{background:#d4edda}
-        .size-s{background:#cce5ff}
-        .size-m{background:#fff3cd}
-        .size-l{background:#f8d7da}
-        .size-xl{background:#e0d4e8}
-        .footer{text-align:center;margin-top:20px;color:#6c757d;font-size:13px}
-        .role-note{background:#fff3cd;border-left:4px solid #ffc107;padding:10px 15px;margin-bottom:20px;border-radius:8px}
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Заголовок и шапка */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .title-area {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            flex: 2;
+        }
+
+        .title-area label {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        #initiativeName {
+            padding: 10px 14px;
+            font-size: 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 40px;
+            width: 280px;
+            background: white;
+            transition: 0.2s;
+        }
+
+        #initiativeName:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #1e293b;
+        }
+
+        button.primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        button.primary:hover {
+            background: #2563eb;
+        }
+
+        button:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        /* Основная сетка: слева матрица, справа статистика */
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .matrix-section {
+            flex: 3;
+            min-width: 280px;
+        }
+
+        .stats-section {
+            flex: 1.2;
+            min-width: 260px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card h2, .card h3 {
+            margin-top: 0;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+            border-left: 4px solid #3b82f6;
+            padding-left: 12px;
+        }
+
+        /* Таблица участников */
+        .participant-card {
+            background: #f9fafb;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .participant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .role-input {
+            font-weight: 600;
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 40px;
+            width: 180px;
+        }
+
+        .delete-participant {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #b91c1c;
+            padding: 4px 12px;
+        }
+
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 12px;
+        }
+
+        .category-item {
+            background: white;
+            border-radius: 16px;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .category-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #334155;
+            margin-bottom: 8px;
+        }
+
+        .weight-badge {
+            font-size: 0.7rem;
+            background: #eef2ff;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 6px;
+            color: #1e40af;
+        }
+
+        .score-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .score-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .add-participant-btn {
+            margin-top: 8px;
+            width: 100%;
+            background: #f1f5f9;
+        }
+
+        .total-score {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 16px 0;
+            color: #0f172a;
+        }
+
+        .size-badge {
+            display: inline-block;
+            background: #e6f0ff;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        hr {
+            margin: 16px 0;
+            border-color: #e2e8f0;
+        }
+
+        @media (max-width: 800px) {
+            body {
+                padding: 12px;
+            }
+            .categories {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="calculator">
-    <h1>👥 Командная оценка размерности инициатив</h1>
-    <div class="initiative-header">
-        <label>📋 Название / номер инициативы:</label>
-        <input type="text" id="initiativeName" placeholder="Например: ЦР-5460">
+<div class="container">
+    <div class="header">
+        <div class="title-area">
+            <label>📌 Инициатива:</label>
+            <input type="text" id="initiativeName" placeholder="Название инициативы / задачи" value="Новая инициатива">
+        </div>
+        <div class="button-group">
+            <button id="shareBtn" class="primary">🔗 Скопировать ссылку с данными</button>
+            <button id="resetBtn">🔄 Сбросить всё</button>
+        </div>
     </div>
-    <div class="user-panel">
-        <h3>➕ Добавить участника оценки</h3>
-        <div class="user-form">
-            <div class="form-group"><label>Имя</label><input type="text" id="userName" placeholder="Иван Петров"></div>
-            <div class="form-group"><label>Роль</label>
-                <select id="userRole">
-                    <option value="developer">💻 Разработчик</option>
-                    <option value="analyst">📊 Аналитик</option>
-                    <option value="tester">🧪 Тестировщик</option>
-                    <option value="expert">👔 Методолог/Эксперт</option>
-                </select>
+
+    <div class="dashboard">
+        <div class="matrix-section">
+            <div class="card">
+                <h2>👥 Участники оценки</h2>
+                <div id="participantsContainer"></div>
+                <button id="addParticipantBtn" class="add-participant-btn">➕ Добавить участника</button>
             </div>
-            <button class="add-user-btn" onclick="addParticipant()">Добавить</button>
+        </div>
+
+        <div class="stats-section">
+            <div class="card">
+                <h3>📊 Статистика по ролям</h3>
+                <div id="statsByRole">—</div>
+                <hr>
+                <h3>🎯 ИТОГОВЫЙ РЕЗУЛЬТАТ</h3>
+                <div id="finalResult" class="total-score">0.00</div>
+                <div id="sizeLabel" class="size-badge">—</div>
+                <div style="margin-top: 16px; font-size: 0.8rem; color: #475569;">
+                    📐 Шкала размеров:<br>
+                    XS &lt;5 &nbsp;| S 5-11 &nbsp;| M 12-20 &nbsp;| L 21-27 &nbsp;| XL ≥28
+                </div>
+            </div>
         </div>
     </div>
-    <div id="participantsList" class="participants-grid"></div>
-    <div id="criteria-container"></div>
-    <div class="consolidated-panel">
-        <h3>📊 Статистика по ролям</h3>
-        <div class="role-stats" id="roleStats"></div>
-        <div class="final-result">
-            <div>ИТОГОВЫЙ РЕЗУЛЬТАТ (среднее по всем):</div>
-            <div class="final-score" id="finalScore">0.00</div>
-            <div class="final-size" id="finalSize">-</div>
-            <div id="participantsCount">Участников: 0</div>
-        </div>
-    </div>
-    <div class="buttons">
-        <button class="save-btn" onclick="saveAll()">💾 Сохранить</button>
-        <button class="export-btn" onclick="exportExcel()">📥 Экспорт в CSV</button>
-        <button class="reset-btn" onclick="resetAll()">🔄 Сбросить</button>
-    </div>
-    <div class="legend">
-        <h3>📐 Шкала размеров:</h3>
-        <div class="size-table">
-            <div class="size-item size-xs"><strong>XS</strong><br>&lt;5</div>
-            <div class="size-item size-s"><strong>S</strong><br>5-11</div>
-            <div class="size-item size-m"><strong>M</strong><br>12-20</div>
-            <div class="size-item size-l"><strong>L</strong><br>21-27</div>
-            <div class="size-item size-xl"><strong>XL</strong><br>≥28</div>
-        </div>
-    </div>
-    <div class="footer">✓ Добавьте участников, выберите участника для редактирования, отметьте критерии</div>
 </div>
 
 <script>
-const criteriaData = {
-    "Модули и подсистемы": [
-        "Требуются доработки в 1 системе, только в УТ с еженедельными релизами:2.22",
-        "Требуются доработки в 2-х и более системах:2.60",
-        "Требуются доработки в 2-х и более системах, одна из которых - ЦФС:2.89",
-        "Затрагиваемая система имеет сильную связность с другими системами и/или legacy-монолит:2.92",
-        "Требуется доработка функционала в зоне другого стрима:2.71",
-        "Требуются доработки в 1 системе, только в ЦФС:2.50"
-    ],
-    "Интеграция и API": [
-        "Требуется создание нового потока интеграции:2.61",
-        "Требуется доработка потока интеграции:2.25",
-        "По существующим обменам нет всей документации:2.57",
-        "Интеграция выполняется силами стрима Интеграции:2.53"
-    ],
-    "Безопасность и права доступа": [
-        "Необходимы изменения в ролевой модели или правах пользователей:1.62",
-        "Есть требования по безопасности данных:2.54"
-    ],
-    "Аналитика и требования": [
-        "Требуется встроить новую логику в существующую:2.45",
-        "Требуется проведение реверса существующей подсистемы:2.09",
-        "Требования неполные, требуют большей глубины проработки:2.67",
-        "Есть ряд предположений (гипотезы), требующих проверки:2.00",
-        "Грейд основного аналитика (джуниор — сильное, мидл — среднее, сеньор — слабое):2.25"
-    ],
-    "Тестирование и окружение": [
-        "Тестовое окружение не доступно или долго разворачивается:2.63",
-        "Требуется заведение большого объема тестовых данных:1.72",
-        "Требуется проведение регрессионного тестирования смежных систем:2.54",
-        "Требуется сложный и длительный UAT с привлечением пользователей:2.71",
-        "Длительность этапа тестирования из-за долгого выполнения:2.36",
-        "Потребность в автоматизации тестирования:2.30"
-    ],
-    "Внешние зависимости и коммуникации": [
-        "Необходимо взаимодействие с внешним владельцем модуля/системы:2.86"
-    ],
-    "Риски и эксплуатация": [
-        "Риск появления CRs:2.45",
-        "Потребность в мониторинге:1.88"
-    ],
-    "Данные и НСИ": [
-        "Большой объем используемых данных (приводит к кратному увеличению задачи):2.05"
-    ]
-};
+    // ---------- Модули и их веса (оригинальная структура) ----------
+    const MODULES = [
+        { name: "Модули и подсистемы", weight: 2.22 },
+        { name: "Модули и подсистемы", weight: 2.60 },
+        { name: "Модули и подсистемы", weight: 2.89 },
+        { name: "Модули и подсистемы", weight: 2.92 },
+        { name: "Модули и подсистемы", weight: 2.71 },
+        { name: "Модули и подсистемы", weight: 2.50 },
+        { name: "Интеграция и API", weight: 2.61 },
+        { name: "Интеграция и API", weight: 2.25 },
+        { name: "Интеграция и API", weight: 2.57 },
+        { name: "Интеграция и API", weight: 2.53 },
+        { name: "Безопасность и права доступа", weight: 1.62 },
+        { name: "Безопасность и права доступа", weight: 2.54 },
+        { name: "Аналитика и требования", weight: 2.45 },
+        { name: "Аналитика и требования", weight: 2.09 },
+        { name: "Аналитика и требования", weight: 2.67 },
+        { name: "Аналитика и требования", weight: 2.00 },
+        { name: "Аналитика и требования", weight: 2.25 },
+        { name: "Тестирование и окружение", weight: 2.63 },
+        { name: "Тестирование и окружение", weight: 1.72 },
+        { name: "Тестирование и окружение", weight: 2.54 },
+        { name: "Тестирование и окружение", weight: 2.71 },
+        { name: "Тестирование и окружение", weight: 2.36 },
+        { name: "Тестирование и окружение", weight: 2.30 },
+        { name: "Внешние зависимости и коммуникации", weight: 2.86 },
+        { name: "Риски и эксплуатация", weight: 2.45 },
+        { name: "Риски и эксплуатация", weight: 1.88 },
+        { name: "Данные и НСИ", weight: 2.05 }
+    ];
 
-const categoriesHiddenForTester = ["Аналитика и требования", "Риски и эксплуатация"];
+    // Глобальное состояние
+    let participants = [];   // каждый: { id, roleName, scores: [] }
 
-let participants = [];
-let currentEditId = null;
-let currentRoleView = null;
+    let nextId = 1;
 
-function getCriteriaArray() {
-    const result = [];
-    for (const cat in criteriaData) {
-        for (const item of criteriaData[cat]) {
-            const [text, weight] = item.split(':');
-            result.push({ category: cat, text, weight: parseFloat(weight) });
-        }
+    // DOM элементы
+    const container = document.getElementById('participantsContainer');
+    const addBtn = document.getElementById('addParticipantBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const initiativeNameInput = document.getElementById('initiativeName');
+
+    // ========== Вспомогательные функции ==========
+    function getEmptyScores() {
+        return new Array(MODULES.length).fill(0);
     }
-    return result;
-}
 
-function renderCriteria() {
-    const container = document.getElementById('criteria-container');
-    container.innerHTML = '';
-    if (currentRoleView === 'tester') {
-        const note = document.createElement('div');
-        note.className = 'role-note';
-        note.innerHTML = '⚠️ Тестировщики не видят "Аналитика и требования" и "Риски и эксплуатация"';
-        container.appendChild(note);
-    }
-    for (const cat in criteriaData) {
-        if (currentRoleView === 'tester' && categoriesHiddenForTester.includes(cat)) continue;
-        const catDiv = document.createElement('div');
-        catDiv.className = 'category';
-        catDiv.textContent = cat;
-        container.appendChild(catDiv);
-        for (const item of criteriaData[cat]) {
-            const [text, weight] = item.split(':');
-            const div = document.createElement('div');
-            div.className = 'criterion';
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.setAttribute('data-weight', weight);
-            cb.addEventListener('change', updateCurrentScore);
-            const label = document.createElement('label');
-            label.textContent = text;
-            const badge = document.createElement('span');
-            badge.className = 'weight-badge';
-            badge.textContent = `вес ${weight}`;
-            div.appendChild(cb);
-            div.appendChild(label);
-            div.appendChild(badge);
-            container.appendChild(div);
-        }
-    }
-}
-
-function addParticipant() {
-    const name = document.getElementById('userName').value.trim();
-    const role = document.getElementById('userRole').value;
-    if (!name) { alert('Введите имя'); return; }
-    participants.push({ id: Date.now(), name, role, checked: [], score: 0, size: '-' });
-    document.getElementById('userName').value = '';
-    renderParticipants();
-    updateStats();
-    editParticipant(participants[participants.length-1].id);
-}
-
-function editParticipant(id) {
-    currentEditId = id;
-    const p = participants.find(p => p.id === id);
-    if (!p) return;
-    currentRoleView = p.role;
-    renderCriteria();
-    const allCb = document.querySelectorAll('input[type="checkbox"]');
-    p.checked.forEach(idx => { if(allCb[idx]) allCb[idx].checked = true; });
-    document.querySelectorAll('.participant-card').forEach(c => c.style.opacity = '0.7');
-    const active = document.querySelector(`.participant-card[data-id="${id}"]`);
-    if(active) active.style.opacity = '1';
-    updateCurrentScore();
-}
-
-function deleteParticipant(id) {
-    if(!confirm('Удалить?')) return;
-    participants = participants.filter(p => p.id !== id);
-    if(currentEditId === id) { currentEditId = null; currentRoleView = null; renderCriteria(); }
-    renderParticipants();
-    updateStats();
-}
-
-function renderParticipants() {
-    const container = document.getElementById('participantsList');
-    container.innerHTML = '';
-    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
-    const roleIcons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔' };
-    participants.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'participant-card';
-        card.setAttribute('data-role', p.role);
-        card.setAttribute('data-id', p.id);
-        card.innerHTML = `
-            <div class="participant-header"><span class="participant-name">${p.name}</span><span>${roleIcons[p.role]} ${roleNames[p.role]}</span></div>
-            <div class="participant-score">${p.score.toFixed(2)}</div>
-            <div class="participant-size">${p.size}</div>
-            <div class="participant-actions"><button class="edit-btn" onclick="editParticipant(${p.id})">✏️</button><button class="delete-btn" onclick="deleteParticipant(${p.id})">🗑️</button></div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-function updateCurrentScore() {
-    if(!currentEditId) return;
-    const idx = participants.findIndex(p => p.id === currentEditId);
-    if(idx === -1) return;
-    const cb = document.querySelectorAll('input[type="checkbox"]');
-    const checked = [];
-    let total = 0;
-    cb.forEach((c,i) => { if(c.checked){ checked.push(i); total += parseFloat(c.getAttribute('data-weight')); } });
-    total = Math.round(total*100)/100;
-    let size = total<5?'XS':total<12?'S':total<21?'M':total<28?'L':'XL';
-    participants[idx].checked = checked;
-    participants[idx].score = total;
-    participants[idx].size = size;
-    renderParticipants();
-    updateStats();
-}
-
-function updateStats() {
-    const statsDiv = document.getElementById('roleStats');
-    statsDiv.innerHTML = '';
-    const roles = ['developer','analyst','tester','expert'];
-    const roleNames = { developer:'Разработчики', analyst:'Аналитики', tester:'Тестировщики', expert:'Методологи' };
-    const icons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔' };
-    let totalSum=0, totalCount=0;
-    roles.forEach(role => {
-        const rp = participants.filter(p => p.role === role);
-        const cnt = rp.length;
-        if(cnt){
-            const sum = rp.reduce((a,b)=>a+b.score,0);
-            const avg = Math.round(sum/cnt*100)/100;
-            totalSum += sum;
-            totalCount += cnt;
-            statsDiv.innerHTML += `<div class="role-stat-card ${role}"><div>${icons[role]}</div><div>${roleNames[role]}</div><div>👥 ${cnt}</div><div class="role-average">${avg.toFixed(2)}</div></div>`;
-        } else {
-            statsDiv.innerHTML += `<div class="role-stat-card ${role}"><div>${icons[role]}</div><div>${roleNames[role]}</div><div>👥 0</div><div class="role-average">—</div></div>`;
-        }
-    });
-    const overall = totalCount ? Math.round(totalSum/totalCount*100)/100 : 0;
-    document.getElementById('finalScore').innerText = overall.toFixed(2);
-    let size = overall<5?'XS':overall<12?'S':overall<21?'M':overall<28?'L':'XL';
-    document.getElementById('finalSize').innerText = size;
-    document.getElementById('participantsCount').innerText = `Участников: ${totalCount}`;
-}
-
-function saveAll() {
-    const name = document.getElementById('initiativeName').value || 'Без названия';
-    localStorage.setItem('assessment', JSON.stringify({ name, participants }));
-    alert('Сохранено');
-}
-
-function exportExcel() {
-    const name = document.getElementById('initiativeName').value || 'Без названия';
-    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
-    let csv = `Инициатива;Участник;Роль;Оценка;Размер\n`;
-    participants.forEach(p => { csv += `"${name}";"${p.name}";"${roleNames[p.role]}";${p.score.toFixed(2)};"${p.size}"\n`; });
-    const avg = participants.length ? participants.reduce((a,b)=>a+b.score,0)/participants.length : 0;
-    csv += `"${name}";"СРЕДНЕЕ";;${Math.round(avg*100)/100};\n`;
-    const blob = new Blob(["\uFEFF"+csv], {type:'text/csv'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${name.replace(/[^a-z0-9]/gi,'_')}_оценка.csv`;
-    a.click();
-    alert('Экспорт завершен');
-}
-
-function resetAll() {
-    if(confirm('Сбросить всё?')){
-        participants = [];
-        currentEditId = null;
-        currentRoleView = null;
-        document.getElementById('initiativeName').value = '';
-        renderCriteria();
+    function addParticipant(roleName = "", scoresArray = null) {
+        const id = nextId++;
+        const newParticipant = {
+            id: id,
+            roleName: roleName.trim() === "" ? `Участник ${id}` : roleName,
+            scores: scoresArray ? [...scoresArray] : getEmptyScores()
+        };
+        participants.push(newParticipant);
         renderParticipants();
-        updateStats();
-        localStorage.removeItem('assessment');
+        updateStatsAndFinal();
     }
-}
 
-window.onload = () => {
-    renderCriteria();
-    const saved = localStorage.getItem('assessment');
-    if(saved){
-        try{
-            const data = JSON.parse(saved);
-            document.getElementById('initiativeName').value = data.name || '';
-            participants = data.participants || [];
+    function updateParticipantRole(id, newRole) {
+        const p = participants.find(p => p.id === id);
+        if (p) {
+            p.roleName = newRole;
             renderParticipants();
-            updateStats();
-        }catch(e){}
+            updateStatsAndFinal();
+        }
     }
-};
+
+    function updateParticipantScore(id, moduleIndex, value) {
+        const p = participants.find(p => p.id === id);
+        if (p && p.scores[moduleIndex] !== undefined) {
+            let num = parseFloat(value);
+            if (isNaN(num)) num = 0;
+            p.scores[moduleIndex] = Math.min(10, Math.max(0, num));
+            renderParticipants(); // обновляем поле ввода, чтобы отобразить валидное значение
+            updateStatsAndFinal();
+        }
+    }
+
+    function deleteParticipant(id) {
+        participants = participants.filter(p => p.id !== id);
+        renderParticipants();
+        updateStatsAndFinal();
+    }
+
+    // Рендер всех карточек участников
+    function renderParticipants() {
+        if (!container) return;
+        if (participants.length === 0) {
+            container.innerHTML = '<div style="padding: 20px; text-align:center; color:#64748b;">Нет участников. Нажмите "Добавить участника"</div>';
+            return;
+        }
+
+        let html = '';
+        participants.forEach(p => {
+            html += `<div class="participant-card" data-id="${p.id}">
+                        <div class="participant-header">
+                            <input type="text" class="role-input" value="${escapeHtml(p.roleName)}" data-id="${p.id}" data-field="role" placeholder="Роль/имя">
+                            <button class="delete-participant" data-id="${p.id}">🗑 Удалить</button>
+                        </div>
+                        <div class="categories">`;
+
+            MODULES.forEach((module, idx) => {
+                let scoreVal = p.scores[idx] !== undefined ? p.scores[idx] : 0;
+                html += `<div class="category-item">
+                            <div class="category-name">${escapeHtml(module.name)} <span class="weight-badge">вес ${module.weight}</span></div>
+                            <input type="number" step="0.5" class="score-input" value="${scoreVal}" data-id="${p.id}" data-module-idx="${idx}" placeholder="0-10">
+                         </div>`;
+            });
+
+            html += `</div></div>`;
+        });
+        container.innerHTML = html;
+
+        // навесить обработчики после рендера
+        document.querySelectorAll('.role-input').forEach(inp => {
+            inp.removeEventListener('change', handleRoleChange);
+            inp.addEventListener('change', handleRoleChange);
+        });
+        document.querySelectorAll('.delete-participant').forEach(btn => {
+            btn.removeEventListener('click', handleDelete);
+            btn.addEventListener('click', handleDelete);
+        });
+        document.querySelectorAll('.score-input').forEach(inp => {
+            inp.removeEventListener('input', handleScoreInput);
+            inp.addEventListener('input', handleScoreInput);
+        });
+    }
+
+    function handleRoleChange(e) {
+        const id = parseInt(e.target.dataset.id);
+        const newRole = e.target.value;
+        updateParticipantRole(id, newRole);
+    }
+
+    function handleDelete(e) {
+        const id = parseInt(e.target.dataset.id);
+        deleteParticipant(id);
+    }
+
+    function handleScoreInput(e) {
+        const id = parseInt(e.target.dataset.id);
+        const moduleIdx = parseInt(e.target.dataset.moduleIdx);
+        let val = e.target.value;
+        updateParticipantScore(id, moduleIdx, val);
+    }
+
+    // Расчет итогового среднего взвешенного по всем участникам
+    function computeFinalWeightedScore() {
+        if (participants.length === 0) return 0;
+        let totalWeightedSum = 0;
+        let totalWeights = 0;
+
+        participants.forEach(participant => {
+            let participantSum = 0;
+            for (let i = 0; i < MODULES.length; i++) {
+                const score = participant.scores[i] || 0;
+                const weight = MODULES[i].weight;
+                participantSum += score * weight;
+                totalWeights += weight;
+            }
+            totalWeightedSum += participantSum;
+        });
+
+        if (totalWeights === 0) return 0;
+        const avgPerParticipant = totalWeightedSum / participants.length;
+        const overallAvg = avgPerParticipant / (totalWeights / participants.length);
+        return Math.round(overallAvg * 100) / 100;
+    }
+
+    function getSizeLabel(score) {
+        if (score < 5) return "XS (<5)";
+        if (score <= 11) return "S (5-11)";
+        if (score <= 20) return "M (12-20)";
+        if (score <= 27) return "L (21-27)";
+        return "XL (≥28)";
+    }
+
+    function updateStatsAndFinal() {
+        const finalScore = computeFinalWeightedScore();
+        document.getElementById('finalResult').innerText = finalScore.toFixed(2);
+        document.getElementById('sizeLabel').innerHTML = `📏 Размер: ${getSizeLabel(finalScore)}`;
+
+        // Статистика по ролям (просто выводим список)
+        if (participants.length === 0) {
+            document.getElementById('statsByRole').innerHTML = '—';
+            return;
+        }
+        let statsHtml = '<ul style="margin:0; padding-left:18px;">';
+        participants.forEach(p => {
+            let sumRaw = 0;
+            for (let i=0;i<MODULES.length;i++) {
+                sumRaw += (p.scores[i] || 0) * MODULES[i].weight;
+            }
+            let totalW = MODULES.reduce((acc,m)=>acc+m.weight,0);
+            let personalAvg = sumRaw / totalW;
+            statsHtml += `<li><strong>${escapeHtml(p.roleName)}</strong>: ${personalAvg.toFixed(2)} баллов</li>`;
+        });
+        statsHtml += '</ul>';
+        document.getElementById('statsByRole').innerHTML = statsHtml;
+    }
+
+    // ========== КОДИРОВАНИЕ СОСТОЯНИЯ В URL ==========
+    function getCurrentState() {
+        return {
+            initiativeName: initiativeNameInput.value,
+            participants: participants.map(p => ({
+                roleName: p.roleName,
+                scores: p.scores.slice()
+            })),
+            version: 2
+        };
+    }
+
+    function loadStateFromObject(state) {
+        if (!state) return false;
+        if (state.initiativeName !== undefined) {
+            initiativeNameInput.value = state.initiativeName;
+        }
+        if (state.participants && Array.isArray(state.participants)) {
+            participants = [];
+            nextId = 1;
+            state.participants.forEach(pData => {
+                let scoresArr = Array(MODULES.length).fill(0);
+                if (pData.scores && pData.scores.length === MODULES.length) {
+                    scoresArr = pData.scores.map(v => (isNaN(v) ? 0 : Number(v)));
+                }
+                addParticipant(pData.roleName || `Участник ${nextId}`, scoresArr);
+            });
+        }
+        renderParticipants();
+        updateStatsAndFinal();
+        return true;
+    }
+
+    function encodeStateToUrl() {
+        const state = getCurrentState();
+        const jsonStr = JSON.stringify(state);
+        // Используем base64url для безопасной передачи (замена + и /)
+        let base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+        base64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        const url = new URL(window.location.href);
+        url.searchParams.set('data', base64);
+        return url.toString();
+    }
+
+    function decodeStateFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const encoded = params.get('data');
+        if (!encoded) return null;
+        try {
+            let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+            while (base64.length % 4) base64 += '=';
+            const jsonStr = decodeURIComponent(escape(atob(base64)));
+            const state = JSON.parse(jsonStr);
+            return state;
+        } catch (e) {
+            console.warn("Ошибка декодирования ссылки", e);
+            return null;
+        }
+    }
+
+    function shareStateToClipboard() {
+        const link = encodeStateToUrl();
+        navigator.clipboard.writeText(link).then(() => {
+            alert("✅ Ссылка скопирована!\nПерешлите её участникам.\nОни откроют калькулятор с теми же названием и участниками.");
+        }).catch(() => {
+            prompt("Скопируйте ссылку вручную:", link);
+        });
+    }
+
+    function resetAll() {
+        participants = [];
+        nextId = 1;
+        initiativeNameInput.value = "Новая инициатива";
+        renderParticipants();
+        updateStatsAndFinal();
+        // очищаем параметр data в URL без перезагрузки страницы
+        const url = new URL(window.location.href);
+        url.searchParams.delete('data');
+        window.history.replaceState({}, '', url.toString());
+    }
+
+    // Загрузка из URL при старте
+    function initFromUrl() {
+        const state = decodeStateFromUrl();
+        if (state) {
+            loadStateFromObject(state);
+        } else {
+            // демо-участник для наглядности (опционально)
+            addParticipant("Аналитик", null);
+            addParticipant("Разработчик", null);
+        }
+        updateStatsAndFinal();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // События
+    addBtn.addEventListener('click', () => addParticipant("", null));
+    shareBtn.addEventListener('click', shareStateToClipboard);
+    resetBtn.addEventListener('click', resetAll);
+    initiativeNameInput.addEventListener('input', () => {
+        // просто сохраняем актуальность, ничего дополнительно
+        updateStatsAndFinal(); // если нужно - можно без пересчета, но для статистики ролей необязательно
+    });
+
+    // Запуск
+    initFromUrl();
 </script>
 </body>
 </html>
