@@ -47,12 +47,13 @@
         .final-result{background:white;padding:25px;border-radius:10px;text-align:center;margin-top:20px;border:3px solid #28a745}
         .final-score{font-size:3.5em;font-weight:bold;color:#28a745}
         .final-size{font-size:3em;font-weight:bold;color:#28a745;margin-top:10px}
-        .buttons{display:flex;gap:10px;margin:20px 0}
-        button{flex:1;padding:14px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
+        .buttons{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}
+        button{flex:1;padding:14px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;min-width:140px}
         .save-btn{background:#007bff;color:white}
         .export-btn{background:#17a2b8;color:white}
         .reset-btn{background:#6c757d;color:white}
         .share-btn{background:#28a745;color:white}
+        .submit-btn{background:#dc3545;color:white}
         .legend{margin-top:25px;padding:20px;background:#f8f9fa;border-radius:10px}
         .size-table{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:15px}
         .size-item{padding:12px;border-radius:8px;background:white;text-align:center}
@@ -104,6 +105,7 @@
         <button class="export-btn" onclick="exportExcel()">📥 Экспорт в CSV</button>
         <button class="reset-btn" onclick="resetAll()">🔄 Сбросить</button>
         <button class="share-btn" onclick="shareStateToUrl()">🔗 Поделиться ссылкой</button>
+        <button class="submit-btn" onclick="submitToGoogleForm()">📬 Отправить ответ ИТ БП</button>
     </div>
     <div class="legend">
         <h3>📐 Шкала размеров:</h3>
@@ -119,6 +121,21 @@
 </div>
 
 <script>
+// ==================== НАСТРОЙКА GOOGLE FORMS ====================
+// Данные из вашей формы (извлечены из ссылки)
+const FORM_CONFIG = {
+    formId: '1FAIpQLSdEM55f7jStWrXOfxPNH0vRLyVaToi5Z7JutVlWPak258QSKg',
+    fields: {
+        initiative: 'entry.138562536',   // Название инициативы
+        name: 'entry.1626848415',        // Имя участника
+        role: 'entry.1215430207',        // Роль
+        score: 'entry.1466388498',       // Оценка
+        size: 'entry.1187084691',        // Размер
+        criteria: 'entry.417483846'      // Отмеченные критерии
+    }
+};
+
+// ==================== ОСНОВНЫЕ ДАННЫЕ ====================
 const criteriaData = {
     "Модули и подсистемы": [
         "Требуются доработки в 1 системе, только в УТ с еженедельными релизами:2.22",
@@ -211,16 +228,14 @@ function renderCriteria() {
     }
     
     for (const cat in criteriaData) {
-        // Проверяем, нужно ли скрыть всю категорию
         if (isTester && categoriesHiddenForTester.includes(cat)) continue;
         
         let hasVisibleItems = false;
-        let categoryItemsHtml = '';
+        let firstItemInCategory = null;
         
         for (const item of criteriaData[cat]) {
             const [text, weight] = item.split(':');
             
-            // Проверяем, нужно ли скрыть этот конкретный критерий
             if (isTester && isHiddenForTester(cat, text)) continue;
             
             hasVisibleItems = true;
@@ -238,16 +253,16 @@ function renderCriteria() {
             div.appendChild(cb);
             div.appendChild(label);
             div.appendChild(badge);
-            categoryItemsHtml = div;
             container.appendChild(div);
+            
+            if (!firstItemInCategory) firstItemInCategory = div;
         }
         
-        // Добавляем заголовок категории, только если в ней есть видимые критерии
-        if (hasVisibleItems) {
+        if (hasVisibleItems && firstItemInCategory) {
             const catDiv = document.createElement('div');
             catDiv.className = 'category';
             catDiv.textContent = cat;
-            container.insertBefore(catDiv, categoryItemsHtml || null);
+            container.insertBefore(catDiv, firstItemInCategory);
         }
     }
 }
@@ -270,28 +285,24 @@ function editParticipant(id) {
     currentRoleView = p.role;
     renderCriteria();
     
-    // Получаем все чекбоксы и восстанавливаем состояние
     const allCb = document.querySelectorAll('#criteria-container input[type="checkbox"]');
-    // Нужно сопоставить индексы — они могли измениться из-за скрытых критериев
-    // Сохраняем соответствие: для каждого участника хранятся индексы в полном списке критериев
     const fullCriteria = getCriteriaArray();
     
-    // Создаем массив видимых чекбоксов с их полными индексами
     const visibleCheckboxes = [];
     let cbIndex = 0;
     for (let i = 0; i < fullCriteria.length; i++) {
         const crit = fullCriteria[i];
         const isHidden = (p.role === 'tester') && isHiddenForTester(crit.category, crit.text);
         if (!isHidden) {
-            visibleCheckboxes.push({ element: allCb[cbIndex], fullIndex: i });
+            if (allCb[cbIndex]) {
+                visibleCheckboxes.push({ element: allCb[cbIndex], fullIndex: i });
+            }
             cbIndex++;
         }
     }
     
-    // Сбрасываем все чекбоксы
     allCb.forEach(cb => cb.checked = false);
     
-    // Восстанавливаем отмеченные
     p.checked.forEach(fullIdx => {
         const found = visibleCheckboxes.find(vc => vc.fullIndex === fullIdx);
         if (found) found.element.checked = true;
@@ -322,7 +333,7 @@ function renderParticipants() {
         card.setAttribute('data-role', p.role);
         card.setAttribute('data-id', p.id);
         card.innerHTML = `
-            <div class="participant-header"><span class="participant-name">${p.name}</span><span>${roleIcons[p.role]} ${roleNames[p.role]}</span></div>
+            <div class="participant-header"><span class="participant-name">${escapeHtml(p.name)}</span><span>${roleIcons[p.role]} ${roleNames[p.role]}</span></div>
             <div class="participant-score">${p.score.toFixed(2)}</div>
             <div class="participant-size">${p.size}</div>
             <div class="participant-actions"><button class="edit-btn" onclick="editParticipant(${p.id})">✏️</button><button class="delete-btn" onclick="deleteParticipant(${p.id})">🗑️</button></div>
@@ -339,7 +350,6 @@ function updateCurrentScore() {
     const p = participants[idx];
     const allCriteria = getCriteriaArray();
     
-    // Получаем все видимые чекбоксы и сопоставляем их с полными индексами
     const allCb = document.querySelectorAll('#criteria-container input[type="checkbox"]');
     const checkedFullIndices = [];
     let cbIndex = 0;
@@ -405,10 +415,15 @@ function saveAll() {
 function exportExcel() {
     const name = document.getElementById('initiativeName').value || 'Без названия';
     const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
-    let csv = `Инициатива;Участник;Роль;Оценка;Размер\n`;
-    participants.forEach(p => { csv += `"${name}";"${p.name}";"${roleNames[p.role]}";${p.score.toFixed(2)};"${p.size}"\n`; });
+    let csv = `Инициатива;Участник;Роль;Оценка;Размер;Отмеченные критерии\n`;
+    const allCriteria = getCriteriaArray();
+    
+    participants.forEach(p => {
+        const checkedTexts = p.checked.map(idx => allCriteria[idx].text).join('; ');
+        csv += `"${name}";"${p.name}";"${roleNames[p.role]}";${p.score.toFixed(2)};"${p.size}";"${checkedTexts}"\n`;
+    });
     const avg = participants.length ? participants.reduce((a,b)=>a+b.score,0)/participants.length : 0;
-    csv += `"${name}";"СРЕДНЕЕ";;${Math.round(avg*100)/100};\n`;
+    csv += `"${name}";"СРЕДНЕЕ";;${Math.round(avg*100)/100};;\n`;
     const blob = new Blob(["\uFEFF"+csv], {type:'text/csv'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -430,8 +445,46 @@ function resetAll() {
     }
 }
 
-// ========== ФУНКЦИИ ДЛЯ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ==========
+// ==================== ФУНКЦИЯ ОТПРАВКИ В GOOGLE FORMS С АВТОЗАПОЛНЕНИЕМ ====================
+function submitToGoogleForm() {
+    // Проверяем, выбран ли участник
+    if (!currentEditId) {
+        alert('Сначала выберите участника (нажмите на карточку с именем), чьи оценки хотите отправить');
+        return;
+    }
+    
+    const currentParticipant = participants.find(p => p.id === currentEditId);
+    if (!currentParticipant) {
+        alert('Участник не найден');
+        return;
+    }
+    
+    const initiativeName = document.getElementById('initiativeName').value || 'Без названия';
+    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
+    const allCriteria = getCriteriaArray();
+    
+    // Формируем список отмеченных критериев
+    const checkedTexts = currentParticipant.checked.map(idx => allCriteria[idx].text);
+    const criteriaList = checkedTexts.join('\n');
+    
+    // Кодируем значения для URL
+    const encode = (str) => encodeURIComponent(str);
+    
+    // Собираем URL для отправки в форму
+    const formUrl = `https://docs.google.com/forms/d/e/${FORM_CONFIG.formId}/viewform?usp=pp_url` +
+        `&${FORM_CONFIG.fields.initiative}=${encode(initiativeName)}` +
+        `&${FORM_CONFIG.fields.name}=${encode(currentParticipant.name)}` +
+        `&${FORM_CONFIG.fields.role}=${encode(roleNames[currentParticipant.role])}` +
+        `&${FORM_CONFIG.fields.score}=${encode(currentParticipant.score.toFixed(2))}` +
+        `&${FORM_CONFIG.fields.size}=${encode(currentParticipant.size)}` +
+        `&${FORM_CONFIG.fields.criteria}=${encode(criteriaList || '—')}`;
+    
+    // Открываем предзаполненную форму в новой вкладке
+    window.open(formUrl, '_blank');
+    alert('✅ Открыта форма с предзаполненными данными.\n\nПроверьте поля и нажмите "Отправить".');
+}
 
+// ==================== ФУНКЦИИ ДЛЯ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ====================
 function getCurrentStateForUrl() {
     const initiativeName = document.getElementById('initiativeName').value;
     const participantsData = participants.map(p => ({
@@ -490,76 +543,3 @@ function loadStateFromObject(state) {
         } else {
             currentEditId = null;
             currentRoleView = null;
-            renderCriteria();
-        }
-    }
-    return true;
-}
-
-function encodeStateToUrl() {
-    const state = getCurrentStateForUrl();
-    const jsonStr = JSON.stringify(state);
-    let base64 = btoa(unescape(encodeURIComponent(jsonStr)));
-    base64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    const url = new URL(window.location.href);
-    url.searchParams.set('data', base64);
-    return url.toString();
-}
-
-function decodeStateFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    const encoded = params.get('data');
-    if (!encoded) return null;
-    try {
-        let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-        while (base64.length % 4) base64 += '=';
-        const jsonStr = decodeURIComponent(escape(atob(base64)));
-        const state = JSON.parse(jsonStr);
-        return state;
-    } catch (e) {
-        console.warn("Ошибка декодирования ссылки", e);
-        return null;
-    }
-}
-
-function shareStateToUrl() {
-    const link = encodeStateToUrl();
-    navigator.clipboard.writeText(link).then(() => {
-        alert("✅ Ссылка скопирована!\n\nПерешлите её участникам. Они откроют калькулятор с теми же названием и участниками.");
-    }).catch(() => {
-        prompt("Скопируйте ссылку вручную:", link);
-    });
-}
-
-function initFromUrl() {
-    const state = decodeStateFromUrl();
-    if (state) {
-        loadStateFromObject(state);
-        return true;
-    }
-    return false;
-}
-
-window.onload = () => {
-    const loadedFromUrl = initFromUrl();
-    
-    if (!loadedFromUrl) {
-        const saved = localStorage.getItem('assessment');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                document.getElementById('initiativeName').value = data.name || '';
-                participants = data.participants || [];
-                renderParticipants();
-                updateStats();
-            } catch(e) {}
-        }
-    }
-    
-    if (participants.length === 0) {
-        renderCriteria();
-    }
-};
-</script>
-</body>
-</html>
