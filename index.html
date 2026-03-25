@@ -349,7 +349,7 @@ function resetAll() {
     }
 }
 
-// ========== ФУНКЦИИ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ==========
+// ========== ДОБАВЛЕНО: ФУНКЦИИ ДЛЯ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ==========
 
 function getCurrentStateForUrl() {
     const initiativeName = document.getElementById('initiativeName').value;
@@ -386,7 +386,27 @@ function loadStateFromObject(state) {
             participants.push(newParticipant);
         }
         
-        recalculateAllScores();
+        // Пересчет оценок
+        const allCriteria = [];
+        for (const cat in criteriaData) {
+            for (const item of criteriaData[cat]) {
+                const [text, weight] = item.split(':');
+                allCriteria.push({ category: cat, text, weight: parseFloat(weight) });
+            }
+        }
+        for (const p of participants) {
+            let total = 0;
+            for (const idx of p.checked) {
+                if (idx < allCriteria.length) {
+                    total += allCriteria[idx].weight;
+                }
+            }
+            total = Math.round(total * 100) / 100;
+            let size = total < 5 ? 'XS' : total < 12 ? 'S' : total < 21 ? 'M' : total < 28 ? 'L' : 'XL';
+            p.score = total;
+            p.size = size;
+        }
+        
         renderParticipants();
         updateStats();
         
@@ -399,29 +419,6 @@ function loadStateFromObject(state) {
         }
     }
     return true;
-}
-
-function recalculateAllScores() {
-    const allCriteria = [];
-    for (const cat in criteriaData) {
-        for (const item of criteriaData[cat]) {
-            const [text, weight] = item.split(':');
-            allCriteria.push({ category: cat, text, weight: parseFloat(weight) });
-        }
-    }
-    
-    for (const p of participants) {
-        let total = 0;
-        for (const idx of p.checked) {
-            if (idx < allCriteria.length) {
-                total += allCriteria[idx].weight;
-            }
-        }
-        total = Math.round(total * 100) / 100;
-        let size = total < 5 ? 'XS' : total < 12 ? 'S' : total < 21 ? 'M' : total < 28 ? 'L' : 'XL';
-        p.score = total;
-        p.size = size;
-    }
 }
 
 function encodeStateToUrl() {
@@ -468,6 +465,7 @@ function initFromUrl() {
     return false;
 }
 
+// Сохраняем старый onload и добавляем загрузку из URL
 const originalOnload = window.onload;
 window.onload = () => {
     const loadedFromUrl = initFromUrl();
@@ -481,7 +479,7 @@ window.onload = () => {
                 participants = data.participants || [];
                 renderParticipants();
                 updateStats();
-            } catch (e) {}
+            } catch(e) {}
         }
     }
     
