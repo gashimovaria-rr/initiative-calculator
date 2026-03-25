@@ -165,11 +165,26 @@ const criteriaData = {
     ]
 };
 
-const categoriesHiddenForTester = ["Аналитика и требования", "Риски и эксплуатация"];
+// Список критериев, которые нужно скрыть для тестировщика (по тексту)
+const hiddenCriteriaForTester = [
+    "Требуется проведение реверса существующей подсистемы",
+    "Есть ряд предположений (гипотезы), требующих проверки",
+    "Большой объем используемых данных (приводит к кратному увеличению задачи)",
+    "Потребность в мониторинге"
+];
+
+// Категории, которые полностью скрываются для тестировщика
+const categoriesHiddenForTester = ["Аналитика и требования", "Риски и эксплуатация", "Интеграция и API"];
 
 let participants = [];
 let currentEditId = null;
 let currentRoleView = null;
+
+// Функция для проверки, нужно ли скрыть критерий для тестировщика
+function isHiddenForTester(category, text) {
+    if (categoriesHiddenForTester.includes(category)) return true;
+    return hiddenCriteriaForTester.some(hiddenText => text.includes(hiddenText));
+}
 
 function getCriteriaArray() {
     const result = [];
@@ -185,20 +200,30 @@ function getCriteriaArray() {
 function renderCriteria() {
     const container = document.getElementById('criteria-container');
     container.innerHTML = '';
-    if (currentRoleView === 'tester') {
+    
+    const isTester = (currentRoleView === 'tester');
+    
+    if (isTester) {
         const note = document.createElement('div');
         note.className = 'role-note';
-        note.innerHTML = '⚠️ Тестировщики не видят "Аналитика и требования" и "Риски и эксплуатация"';
+        note.innerHTML = '⚠️ Тестировщики не видят: "Интеграция и API", "Аналитика и требования", "Риски и эксплуатация", а также отдельные критерии из других блоков';
         container.appendChild(note);
     }
+    
     for (const cat in criteriaData) {
-        if (currentRoleView === 'tester' && categoriesHiddenForTester.includes(cat)) continue;
-        const catDiv = document.createElement('div');
-        catDiv.className = 'category';
-        catDiv.textContent = cat;
-        container.appendChild(catDiv);
+        // Проверяем, нужно ли скрыть всю категорию
+        if (isTester && categoriesHiddenForTester.includes(cat)) continue;
+        
+        let hasVisibleItems = false;
+        let categoryItemsHtml = '';
+        
         for (const item of criteriaData[cat]) {
             const [text, weight] = item.split(':');
+            
+            // Проверяем, нужно ли скрыть этот конкретный критерий
+            if (isTester && isHiddenForTester(cat, text)) continue;
+            
+            hasVisibleItems = true;
             const div = document.createElement('div');
             div.className = 'criterion';
             const cb = document.createElement('input');
@@ -213,7 +238,16 @@ function renderCriteria() {
             div.appendChild(cb);
             div.appendChild(label);
             div.appendChild(badge);
+            categoryItemsHtml = div;
             container.appendChild(div);
+        }
+        
+        // Добавляем заголовок категории, только если в ней есть видимые критерии
+        if (hasVisibleItems) {
+            const catDiv = document.createElement('div');
+            catDiv.className = 'category';
+            catDiv.textContent = cat;
+            container.insertBefore(catDiv, categoryItemsHtml || null);
         }
     }
 }
@@ -235,8 +269,34 @@ function editParticipant(id) {
     if (!p) return;
     currentRoleView = p.role;
     renderCriteria();
-    const allCb = document.querySelectorAll('input[type="checkbox"]');
-    p.checked.forEach(idx => { if(allCb[idx]) allCb[idx].checked = true; });
+    
+    // Получаем все чекбоксы и восстанавливаем состояние
+    const allCb = document.querySelectorAll('#criteria-container input[type="checkbox"]');
+    // Нужно сопоставить индексы — они могли измениться из-за скрытых критериев
+    // Сохраняем соответствие: для каждого участника хранятся индексы в полном списке критериев
+    const fullCriteria = getCriteriaArray();
+    
+    // Создаем массив видимых чекбоксов с их полными индексами
+    const visibleCheckboxes = [];
+    let cbIndex = 0;
+    for (let i = 0; i < fullCriteria.length; i++) {
+        const crit = fullCriteria[i];
+        const isHidden = (p.role === 'tester') && isHiddenForTester(crit.category, crit.text);
+        if (!isHidden) {
+            visibleCheckboxes.push({ element: allCb[cbIndex], fullIndex: i });
+            cbIndex++;
+        }
+    }
+    
+    // Сбрасываем все чекбоксы
+    allCb.forEach(cb => cb.checked = false);
+    
+    // Восстанавливаем отмеченные
+    p.checked.forEach(fullIdx => {
+        const found = visibleCheckboxes.find(vc => vc.fullIndex === fullIdx);
+        if (found) found.element.checked = true;
+    });
+    
     document.querySelectorAll('.participant-card').forEach(c => c.style.opacity = '0.7');
     const active = document.querySelector(`.participant-card[data-id="${id}"]`);
     if(active) active.style.opacity = '1';
@@ -275,15 +335,36 @@ function updateCurrentScore() {
     if(!currentEditId) return;
     const idx = participants.findIndex(p => p.id === currentEditId);
     if(idx === -1) return;
-    const cb = document.querySelectorAll('input[type="checkbox"]');
-    const checked = [];
+    
+    const p = participants[idx];
+    const allCriteria = getCriteriaArray();
+    
+    // Получаем все видимые чекбоксы и сопоставляем их с полными индексами
+    const allCb = document.querySelectorAll('#criteria-container input[type="checkbox"]');
+    const checkedFullIndices = [];
+    let cbIndex = 0;
+    for (let i = 0; i < allCriteria.length; i++) {
+        const crit = allCriteria[i];
+        const isHidden = (p.role === 'tester') && isHiddenForTester(crit.category, crit.text);
+        if (!isHidden) {
+            if (allCb[cbIndex] && allCb[cbIndex].checked) {
+                checkedFullIndices.push(i);
+            }
+            cbIndex++;
+        }
+    }
+    
     let total = 0;
-    cb.forEach((c,i) => { if(c.checked){ checked.push(i); total += parseFloat(c.getAttribute('data-weight')); } });
-    total = Math.round(total*100)/100;
-    let size = total<5?'XS':total<12?'S':total<21?'M':total<28?'L':'XL';
-    participants[idx].checked = checked;
+    checkedFullIndices.forEach(i => {
+        total += allCriteria[i].weight;
+    });
+    total = Math.round(total * 100) / 100;
+    let size = total < 5 ? 'XS' : total < 12 ? 'S' : total < 21 ? 'M' : total < 28 ? 'L' : 'XL';
+    
+    participants[idx].checked = checkedFullIndices;
     participants[idx].score = total;
     participants[idx].size = size;
+    
     renderParticipants();
     updateStats();
 }
@@ -349,7 +430,7 @@ function resetAll() {
     }
 }
 
-// ========== ДОБАВЛЕНО: ФУНКЦИИ ДЛЯ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ==========
+// ========== ФУНКЦИИ ДЛЯ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ==========
 
 function getCurrentStateForUrl() {
     const initiativeName = document.getElementById('initiativeName').value;
@@ -387,13 +468,7 @@ function loadStateFromObject(state) {
         }
         
         // Пересчет оценок
-        const allCriteria = [];
-        for (const cat in criteriaData) {
-            for (const item of criteriaData[cat]) {
-                const [text, weight] = item.split(':');
-                allCriteria.push({ category: cat, text, weight: parseFloat(weight) });
-            }
-        }
+        const allCriteria = getCriteriaArray();
         for (const p of participants) {
             let total = 0;
             for (const idx of p.checked) {
@@ -465,8 +540,6 @@ function initFromUrl() {
     return false;
 }
 
-// Сохраняем старый onload и добавляем загрузку из URL
-const originalOnload = window.onload;
 window.onload = () => {
     const loadedFromUrl = initFromUrl();
     
