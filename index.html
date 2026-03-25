@@ -122,16 +122,15 @@
 
 <script>
 // ==================== НАСТРОЙКА GOOGLE FORMS ====================
-// Данные из вашей формы (извлечены из ссылки)
 const FORM_CONFIG = {
     formId: '1FAIpQLSdEM55f7jStWrXOfxPNH0vRLyVaToi5Z7JutVlWPak258QSKg',
     fields: {
-        initiative: 'entry.138562536',   // Название инициативы
-        name: 'entry.1626848415',        // Имя участника
-        role: 'entry.1215430207',        // Роль
-        score: 'entry.1466388498',       // Оценка
-        size: 'entry.1187084691',        // Размер
-        criteria: 'entry.417483846'      // Отмеченные критерии
+        initiative: 'entry.138562536',
+        name: 'entry.1626848415',
+        role: 'entry.1215430207',
+        score: 'entry.1466388498',
+        size: 'entry.1187084691',
+        criteria: 'entry.417483846'
     }
 };
 
@@ -182,7 +181,7 @@ const criteriaData = {
     ]
 };
 
-// Список критериев, которые нужно скрыть для тестировщика (по тексту)
+// Скрытые критерии для тестировщика
 const hiddenCriteriaForTester = [
     "Требуется проведение реверса существующей подсистемы",
     "Есть ряд предположений (гипотезы), требующих проверки",
@@ -190,14 +189,12 @@ const hiddenCriteriaForTester = [
     "Потребность в мониторинге"
 ];
 
-// Категории, которые полностью скрываются для тестировщика
 const categoriesHiddenForTester = ["Аналитика и требования", "Риски и эксплуатация", "Интеграция и API"];
 
 let participants = [];
 let currentEditId = null;
 let currentRoleView = null;
 
-// Функция для проверки, нужно ли скрыть критерий для тестировщика
 function isHiddenForTester(category, text) {
     if (categoriesHiddenForTester.includes(category)) return true;
     return hiddenCriteriaForTester.some(hiddenText => text.includes(hiddenText));
@@ -445,9 +442,8 @@ function resetAll() {
     }
 }
 
-// ==================== ФУНКЦИЯ ОТПРАВКИ В GOOGLE FORMS С АВТОЗАПОЛНЕНИЕМ ====================
+// ==================== ФУНКЦИЯ ОТПРАВКИ В GOOGLE FORMS ====================
 function submitToGoogleForm() {
-    // Проверяем, выбран ли участник
     if (!currentEditId) {
         alert('Сначала выберите участника (нажмите на карточку с именем), чьи оценки хотите отправить');
         return;
@@ -463,14 +459,11 @@ function submitToGoogleForm() {
     const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
     const allCriteria = getCriteriaArray();
     
-    // Формируем список отмеченных критериев
     const checkedTexts = currentParticipant.checked.map(idx => allCriteria[idx].text);
     const criteriaList = checkedTexts.join('\n');
     
-    // Кодируем значения для URL
     const encode = (str) => encodeURIComponent(str);
     
-    // Собираем URL для отправки в форму
     const formUrl = `https://docs.google.com/forms/d/e/${FORM_CONFIG.formId}/viewform?usp=pp_url` +
         `&${FORM_CONFIG.fields.initiative}=${encode(initiativeName)}` +
         `&${FORM_CONFIG.fields.name}=${encode(currentParticipant.name)}` +
@@ -479,12 +472,11 @@ function submitToGoogleForm() {
         `&${FORM_CONFIG.fields.size}=${encode(currentParticipant.size)}` +
         `&${FORM_CONFIG.fields.criteria}=${encode(criteriaList || '—')}`;
     
-    // Открываем предзаполненную форму в новой вкладке
     window.open(formUrl, '_blank');
     alert('✅ Открыта форма с предзаполненными данными.\n\nПроверьте поля и нажмите "Отправить".');
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ====================
+// ==================== ФУНКЦИИ ПЕРЕДАЧИ СОСТОЯНИЯ ЧЕРЕЗ URL ====================
 function getCurrentStateForUrl() {
     const initiativeName = document.getElementById('initiativeName').value;
     const participantsData = participants.map(p => ({
@@ -520,7 +512,6 @@ function loadStateFromObject(state) {
             participants.push(newParticipant);
         }
         
-        // Пересчет оценок
         const allCriteria = getCriteriaArray();
         for (const p of participants) {
             let total = 0;
@@ -543,3 +534,13 @@ function loadStateFromObject(state) {
         } else {
             currentEditId = null;
             currentRoleView = null;
+            renderCriteria();
+        }
+    }
+    return true;
+}
+
+function encodeStateToUrl() {
+    const state = getCurrentStateForUrl();
+    const jsonStr = JSON.stringify(state);
+    let base64 = bto
