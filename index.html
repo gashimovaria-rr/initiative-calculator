@@ -23,6 +23,7 @@
         .participant-card[data-role="analyst"]{border-left-color:#28a745}
         .participant-card[data-role="tester"]{border-left-color:#ffc107}
         .participant-card[data-role="expert"]{border-left-color:#dc3545}
+        .participant-card[data-role="itbp"]{border-left-color:#6f42c1}
         .participant-header{display:flex;justify-content:space-between;margin-bottom:10px}
         .participant-name{font-weight:bold}
         .participant-score{font-size:28px;font-weight:bold;color:#007bff;text-align:center;margin:10px 0}
@@ -43,6 +44,7 @@
         .role-stat-card.analyst{border-top:4px solid #28a745}
         .role-stat-card.tester{border-top:4px solid #ffc107}
         .role-stat-card.expert{border-top:4px solid #dc3545}
+        .role-stat-card.itbp{border-top:4px solid #6f42c1}
         .role-average{font-size:28px;font-weight:bold;color:#007bff}
         .final-result{background:white;padding:25px;border-radius:10px;text-align:center;margin-top:20px;border:3px solid #28a745}
         .final-score{font-size:3.5em;font-weight:bold;color:#28a745}
@@ -83,6 +85,7 @@
                     <option value="analyst">📊 Аналитик</option>
                     <option value="tester">🧪 Тестировщик</option>
                     <option value="expert">👔 Методолог/Эксперт</option>
+                    <option value="itbp">⚙️ Инженер ИТБП</option>
                 </select>
             </div>
             <button class="add-user-btn" onclick="addParticipant()">Добавить</button>
@@ -322,8 +325,8 @@ function deleteParticipant(id) {
 function renderParticipants() {
     const container = document.getElementById('participantsList');
     container.innerHTML = '';
-    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
-    const roleIcons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔' };
+    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог', itbp:'ИТБП' };
+    const roleIcons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔', itbp:'⚙️'};
     participants.forEach(p => {
         const card = document.createElement('div');
         card.className = 'participant-card';
@@ -379,9 +382,9 @@ function updateCurrentScore() {
 function updateStats() {
     const statsDiv = document.getElementById('roleStats');
     statsDiv.innerHTML = '';
-    const roles = ['developer','analyst','tester','expert'];
-    const roleNames = { developer:'Разработчики', analyst:'Аналитики', tester:'Тестировщики', expert:'Методологи' };
-    const icons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔' };
+    const roles = ['developer','analyst','tester','expert','itbp'];
+    const roleNames = { developer:'Разработчики', analyst:'Аналитики', tester:'Тестировщики', expert:'Методологи', itbp:'ИТБП'};
+    const icons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔, 'itbp:'⚙️'};
     let totalSum=0, totalCount=0;
     roles.forEach(role => {
         const rp = participants.filter(p => p.role === role);
@@ -411,7 +414,7 @@ function saveAll() {
 
 function exportExcel() {
     const name = document.getElementById('initiativeName').value || 'Без названия';
-    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
+    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог', itbp:'ИТБП'};
     let csv = `Инициатива;Участник;Роль;Оценка;Размер;Отмеченные критерии\n`;
     const allCriteria = getCriteriaArray();
     
