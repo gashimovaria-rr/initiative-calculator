@@ -384,7 +384,7 @@ function updateStats() {
     statsDiv.innerHTML = '';
     const roles = ['developer','analyst','tester','expert','itbp'];
     const roleNames = { developer:'Разработчики', analyst:'Аналитики', tester:'Тестировщики', expert:'Методологи', itbp:'ИТБП'};
-    const icons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔, 'itbp:'⚙️'};
+    const icons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔', 'itbp:'⚙️'};
     let totalSum=0, totalCount=0;
     roles.forEach(role => {
         const rp = participants.filter(p => p.role === role);
