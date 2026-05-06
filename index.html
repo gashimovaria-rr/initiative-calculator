@@ -38,7 +38,7 @@
         .criterion label{flex:1;font-size:15px;line-height:1.5}
         .weight-badge{background:#007bff;color:white;padding:5px 12px;border-radius:20px;font-size:13px;white-space:nowrap}
         .consolidated-panel{margin-top:30px;padding:20px;background:linear-gradient(135deg,#f5f7fa,#c3cfe2);border-radius:10px}
-        .role-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0}
+        .role-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:15px;margin:20px 0}
         .role-stat-card{background:white;padding:15px;border-radius:10px;text-align:center}
         .role-stat-card.developer{border-top:4px solid #007bff}
         .role-stat-card.analyst{border-top:4px solid #28a745}
@@ -326,7 +326,7 @@ function renderParticipants() {
     const container = document.getElementById('participantsList');
     container.innerHTML = '';
     const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог', itbp:'ИТБП' };
-    const roleIcons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔', itbp:'⚙️'};
+    const roleIcons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔', itbp:'⚙️' };
     participants.forEach(p => {
         const card = document.createElement('div');
         card.className = 'participant-card';
@@ -383,8 +383,8 @@ function updateStats() {
     const statsDiv = document.getElementById('roleStats');
     statsDiv.innerHTML = '';
     const roles = ['developer','analyst','tester','expert','itbp'];
-    const roleNames = { developer:'Разработчики', analyst:'Аналитики', tester:'Тестировщики', expert:'Методологи', itbp:'ИТБП'};
-    const icons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔', 'itbp:'⚙️'};
+    const roleNames = { developer:'Разработчики', analyst:'Аналитики', tester:'Тестировщики', expert:'Методологи', itbp:'ИТБП' };
+    const icons = { developer:'💻', analyst:'📊', tester:'🧪', expert:'👔', itbp:'⚙️' };
     let totalSum=0, totalCount=0;
     roles.forEach(role => {
         const rp = participants.filter(p => p.role === role);
@@ -414,7 +414,7 @@ function saveAll() {
 
 function exportExcel() {
     const name = document.getElementById('initiativeName').value || 'Без названия';
-    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог', itbp:'ИТБП'};
+    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог', itbp:'ИТБП' };
     let csv = `Инициатива;Участник;Роль;Оценка;Размер;Отмеченные критерии\n`;
     const allCriteria = getCriteriaArray();
     
@@ -459,7 +459,7 @@ function submitToGoogleForm() {
     }
     
     const initiativeName = document.getElementById('initiativeName').value || 'Без названия';
-    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог' };
+    const roleNames = { developer:'Разработчик', analyst:'Аналитик', tester:'Тестировщик', expert:'Методолог', itbp:'ИТБП' };
     const allCriteria = getCriteriaArray();
     
     const checkedTexts = currentParticipant.checked.map(idx => allCriteria[idx].text);
